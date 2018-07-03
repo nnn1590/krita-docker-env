@@ -21,14 +21,16 @@ developers already have al least one clone of Krita source tree).
 
 ```bash
 # create directory structure for container control directory
-mkdir -p krita-master/persistent
-cd krita-master
+git clone kde:scratch/dkazakov/krita-docker-env.git krita-auto-1
+
+cd krita-auto-1
+mkdir persistent
 
 # copy/chechout Krita sources to 'persistent/krita'
 cp -r /path/to/sources/krita ./persistent/krita
 
-# initialize control scripts and the Dockerfile
-./persistent/krita/build-tools/docker/bin/bootstrap-root.sh
+## or ...
+# git clone kde:krita persistent/krita
 
 # download the deps archive
 ./bin/bootstrap-deps.sh
@@ -38,7 +40,7 @@ cp -r /path/to/sources/krita ./persistent/krita
 
 ```bash
 ./bin/build_image krita-deps
-./bin/run_container krita-deps krita-master
+./bin/run_container krita-deps krita-auto-1
 ```
 
 ## Enter the container and build Krita
@@ -97,7 +99,7 @@ If you don't need your container/image anymore, you can delete them from the doc
 
 ```bash
 # remove the container
-sudo docker rm krita-master
+sudo docker rm krita-auto-1
 
 # remove the image
 sudo docker rmi krita-deps
@@ -112,6 +114,16 @@ TODO: do we need some extra cleaups for docker's caches?
 
 Either relogin to the container or just execute `source ~/.devenv.inc`
 
+### OpenGL doesn't work on NVidia GPU with proprietary drivers
+
+The docker run script automatically forwards the GPU devices into the container, but it
+doesn't install the drivers for the GPU. You should install exactly the same version of
+the driver that is installed on your host system. Just run the following script when you
+are on host:
+
+```bash
+./bin/install_nvidia_drivers.sh
+```
 
 ### Not enough space on root partition
 
