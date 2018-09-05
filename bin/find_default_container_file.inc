@@ -28,3 +28,12 @@ function parseContainerArgs {
     echo ${container_name}
 }
 
+function tryStartContainer {
+    container_name=$1
+
+    container_id=$(sudo docker ps -q -f "status=running" -f "name=$container_name")
+
+    if [ -z ${container_id} ]; then
+        sudo docker start ${container_name}
+    fi
+}
