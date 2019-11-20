@@ -5,4 +5,7 @@ if [ "$#" -ne 1 ]; then
   exit 1
 fi
 
-sudo docker build -t $1 .
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source ${DIR}/find_default_container_file.inc
+
+${DOCKER_BINARY} build -t $1 .

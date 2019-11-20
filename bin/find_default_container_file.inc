@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if groups | grep docker > /dev/null 2>&1; then
+    DOCKER_BINARY=docker
+else
+    DOCKER_BINARY=sudo docker
+fi
+
 function findContainerName {
     DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     container_file=`${DIR}/find_up ./ -name .container_name`
@@ -31,9 +37,9 @@ function parseContainerArgs {
 function tryStartContainer {
     container_name=$1
 
-    container_id=$(sudo docker ps -q -f "status=running" -f "name=$container_name")
+    container_id=$(${DOCKER_BINARY} ps -q -f "status=running" -f "name=$container_name")
 
     if [ -z ${container_id} ]; then
-        sudo docker start ${container_name}
+        ${DOCKER_BINARY} start ${container_name}
     fi
 }

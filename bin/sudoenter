@@ -10,4 +10,4 @@ fi
 
 tryStartContainer $container_name
 
-sudo docker exec -u root -ti ${container_name} sh -c "cd /home/appimage && /bin/bash -l"
+${DOCKER_BINARY} exec -u root -ti ${container_name} sh -c "cd /home/appimage && /bin/bash -l"

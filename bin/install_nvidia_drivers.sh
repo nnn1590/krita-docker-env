@@ -26,7 +26,7 @@ if [ ! -f persistent/${driver_file} ]; then
 fi
 
 if [ -f persistent/${driver_file} ]; then
-    sudo docker exec -ti -u root ${container_name} /home/appimage/persistent/${driver_file} -a -N --ui=none --no-kernel-module -s
+    ${DOCKER_BINARY} exec -ti -u root ${container_name} /home/appimage/persistent/${driver_file} -a -N --ui=none --no-kernel-module -s
 else
     echo "Cannot find the driver file: ${driver_file}"
     exit 1
