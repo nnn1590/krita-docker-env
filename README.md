@@ -71,7 +71,7 @@ without any version suffixes, then you will be able to use the script below:
 
 ```bash
 # inside the container
-./persistent/qt-creator-opensource-linux-x86_64-4.6.2.run
+./persistent/qt-creator-opensource-linux-x86_64.run
 ```
 
 To start QtCreator:

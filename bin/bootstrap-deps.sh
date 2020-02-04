@@ -17,7 +17,7 @@ creator_file=qt-creator-opensource-linux-x86_64-${creator_major}.${creator_minor
 if [ ! -f ./persistent/${creator_file} ]; then
     (
         cd ./persistent/
-        wget http://download.qt.io/official_releases/qtcreator/${creator_major}/${creator_major}.${creator_minor}/${creator_file} || exit 1
+        wget http://download.qt.io/official_releases/qtcreator/${creator_major}/${creator_major}.${creator_minor}/${creator_file} -o qt-creator-opensource-linux-x86_64.run || exit 1
         chmod a+x ${creator_file}
     )
 fi
