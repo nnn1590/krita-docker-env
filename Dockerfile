@@ -21,7 +21,7 @@ RUN echo 'export LC_ALL=en_US.UTF-8' >> ${USRHOME}/.bashrc && \
     echo 'source ~/devenv.inc' >> ${USRHOME}/.bashrc && \
     echo 'prepend PATH ~/bin/' >> ${USRHOME}/.bashrc
 
-RUN mkdir -p ${USRHOME}/appimage-workspace/krita-inst && \
+RUN mkdir -p ${USRHOME}/appimage-workspace/krita.appdir/usr && \
     mkdir -p ${USRHOME}/appimage-workspace/krita-build && \
     mkdir -p ${USRHOME}/bin
 

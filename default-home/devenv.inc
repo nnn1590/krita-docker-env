@@ -1,6 +1,6 @@
 prepend() { [ -d "$2" ] && eval $1=\"$2\$\{$1:+':'\$$1\}\" && export $1 ; }
 
-export KRITADIR=/home/appimage/appimage-workspace/krita-inst
+export KRITADIR=/home/appimage/appimage-workspace/krita.appdir/usr
 export DEPSDIR=/home/appimage/appimage-workspace/deps/usr
 
 
@@ -23,4 +23,4 @@ prepend CMAKE_PREFIX_PATH $DEPSDIR
 #prepend PYTHONPATH $DEPSDIR/lib/python3.5/
 prepend PYTHONPATH $DEPSDIR/sip
 
-#prepend PYQT_SIP_DIR_OVERRIDE $DEPSDIR/share/sip
+prepend PATH ~/tools/bin
