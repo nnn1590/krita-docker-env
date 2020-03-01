@@ -81,6 +81,13 @@ To start QtCreator:
 ./bin/qtcreator
 ```
 
+To copy your local QtCreator's config into the container:
+
+```bash
+# from the host
+./bin/copy_qtcreator_config.sh
+```
+
 ## Stopping the container and cleaning up
 
 When not in use you can stop the container. All your filesystem state is saved, but
