@@ -1,0 +1,25 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ENV_ROOT=${DIR}/../../
+
+CONTAINER_FILES=$(find ${ENV_ROOT} -maxdepth 2 -name .container_name | sort)
+if [ $? -ne 0 ]; then
+    echo "Failed to find any existing containers" 1>&2
+    exit 1
+fi
+
+for CONT_FILE in ${CONTAINER_FILES}; do
+    CONT_NAME=$(cat $CONT_FILE)
+    CONT_DIR="$( cd "$( dirname "${CONT_FILE}" )" && pwd )"
+
+    printf "=== %-20s | container: %s\n" $(basename ${CONT_DIR}) ${CONT_NAME}
+
+    (
+        cd ${CONT_DIR}/persistent/krita
+        git --no-pager show -s --pretty="format:%C(auto)%D%n%h %ad%n%s%n%n"
+        git --no-pager status -s
+    )
+    echo
+    echo
+done
