@@ -21,7 +21,7 @@ developers already have al least one clone of Krita source tree).
 
 ```bash
 # create directory structure for container control directory
-git clone kde:scratch/dkazakov/krita-docker-env.git krita-auto-1
+git clone https://invent.kde.org/dkazakov/krita-docker-env.git krita-auto-1
 
 cd krita-auto-1
 mkdir persistent
