@@ -63,6 +63,25 @@ krita
 
 ```
 
+## Building AppImage package for your version of Krita
+
+If you want to build a portable package for your version of Krita, just enter
+the container and type:
+
+```bash
+~/bin/build_krita_appimage.sh
+```
+
+The built package will be copied to `./persistent/` folder.
+
+By default, the package will containt debugging symbols and will be
+about 450 MiB in size. If you want a smaller and more portable package
+without debigging information, add `STRIP_APPIMAGE=1` environment variable:
+
+```bash
+STRIP_APPIMAGE=1 ~/bin/build_krita_appimage.sh
+```
+
 ## Extra developer tools
 
 To install QtCreator, enter container and start the installer, downloaded while
