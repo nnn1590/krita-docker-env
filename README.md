@@ -158,6 +158,17 @@ folder under */var* directory. You might not have enough space there for buildin
 (it needs about 10 GiB). In such a case it is recommended to move the docker images
 folder into another location, where there is enough space.
 
+Add the following to `/etc/docker/daemon.json`:
+
+```json
+{
+    "data-root" : "/home/devel5/docker"
+}
+```
+
+If you have older version of OS (Ubuntu 16.04 and earlier), then you should 
+do the following:
+
 ```bash
 echo 'DOCKER_OPTS="-g /home/devel5/docker"' >> /etc/default/docker
 ```
