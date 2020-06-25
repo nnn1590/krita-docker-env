@@ -31,7 +31,7 @@ COPY ./default-home/devenv.inc \
 
 COPY ./default-home/run_cmake.sh \
      ./default-home/build_krita_appimage.sh \
-     ${USRHOME}/bin
+     ${USRHOME}/bin/
 
 ADD persistent/krita-appimage-deps.tar ${USRHOME}/appimage-workspace/
 
