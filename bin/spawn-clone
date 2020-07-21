@@ -150,7 +150,7 @@ if [ $? -ne 0 ]; then
         
         time docker commit $container_name $IMAGE_NAME
 
-    ) 200 > $ROOT_DIR/.spawn_clone.lock 
+    ) 200>$ROOT_DIR/.spawn_clone.lock 
     
     
     echo "done"
