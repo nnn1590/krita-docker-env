@@ -1,0 +1,198 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source ${DIR}/find_default_container_file.inc
+
+container_name=$(findContainerName $*)
+if [ -z ${container_name} ]; then
+    exit 1
+fi
+
+ROOT_DIR="$(realpath $DIR/../)"
+
+CLONE_NAME=
+REMOVE_OLD_IMAGE=0
+CHECKOUT_SHA=
+FETCH_URL=
+CHECKOUT_MR=
+CHERRY_PICK_MR=
+BUILD_CONTAINER=0
+ENTER_CONTAINER=0
+
+
+usage=\
+"Usage: $(basename "$0") [OPTION]...\n
+Create a clone of the current container and put it into\n
+./clones/ subfolder. \n
+\n
+$(basename "$0") will cache the image of the current \n
+container under the following name:\n
+\n
+\`cat .container_name\`:clone-spawn\n
+\n
+To flush the cache pass '-f' option. \n
+\n
+where:\n
+    -h,      --help              show this help text\n
+    -n,      --name              name of the created container\n
+    -f,      --flush             flush cached image\n
+    -s SHA1, --sha1=SHA1         sha1 of the commit to checkout after cloning\n
+    -u URL,  --url=URL           URL to fetch the branch from\n
+    -m MR,   --checkout-mr=MR    checkout merge request MR\n
+             --cherry-pick-mr=MR cherry-pick the latest commit of merge request MR\n
+    -b,      --build             build Krita after cloning\n
+    -e,      --enter             enter container after cloning\n
+    "
+
+
+# Call getopt to validate the provided input. 
+options=$(getopt -o fs:u:m:ben:h --long flush-cache,sha1:,fetch:,checkout-mr:,cherry-pick-mr:,build,enter,name,help -- "$@")
+[ $? -eq 0 ] || { 
+    echo "Incorrect options provided"
+    exit 1
+}
+eval set -- "$options"
+while true; do
+    case "$1" in
+    -f | --flush-cache)
+        REMOVE_OLD_IMAGE=1
+        ;;
+    -s | --sha1)
+        shift;
+        CHECKOUT_SHA=$1
+        ;;
+    -u | --fetch-url)
+        shift;
+        FETCH_URL=$1
+        ;;
+    -m | --checkout-mr)
+        shift;
+        CHECKOUT_MR=$1
+        ;;
+    --cherry-pick-mr)
+        shift;
+        CHERRY_PICK_MR=$1
+        ;;
+    -n | --name)
+        shift;
+        CLONE_NAME=$1
+        ;;
+    -b | --build)
+        BUILD_CONTAINER=1
+        ;;
+    -e | --enter)
+        ENTER_CONTAINER=1
+        ;;
+    -h | --help)
+        echo -e $usage >&2
+        exit 1
+        ;;
+    --)
+        shift
+        break
+        ;;
+    esac
+    shift
+done
+
+if [ -z $CLONE_NAME ]; then
+    if [ -n "$CHECKOUT_SHA" ]; then
+        CLONE_NAME=clone-$CHECKOUT_SHA
+    elif [ -n "$FETCH_URL" ]; then
+        CLONE_NAME=clone-$FETCH_URL
+    elif [ -n "$CHECKOUT_MR" ]; then
+        CLONE_NAME=clone-mr-$CHECKOUT_MR
+    elif [ -n "$CHERRY_PICK_MR" ]; then
+        CLONE_NAME=clone-mr-$CHERRY_PICK_MR
+    else
+        CLONE_NAME=clone-`date -Iminutes`
+    fi
+fi
+
+#echo CLONE_NAME $CLONE_NAME
+#echo REMOVE_OLD_IMAGE $REMOVE_OLD_IMAGE
+#echo CHECKOUT_SHA $CHECKOUT_SHA
+#echo FETCH_URL $FETCH_URL
+#echo CHECKOUT_MR $CHECKOUT_MR
+#echo CHERRY_PICK_MR $CHERRY_PICK_MR
+#echo BUILD_CONTAINER $BUILD_CONTAINER
+#echo ENTER_CONTAINER $ENTER_CONTAINER
+
+CLONE_ROOT=$ROOT_DIR/clones/$CLONE_NAME
+IMAGE_NAME=$container_name:clone-spawn
+
+if [ -d $CLONE_ROOT ]; then
+    echo "Clone directory $CLONE_ROOT already exists. Exiting..."
+    exit 2
+fi
+
+# stop source container if it is running
+container_id=$(${DOCKER_BINARY} ps -q -f "status=running" -f "name=$container_name")
+if [ -n "${container_id}" ]; then
+    ${DOCKER_BINARY} stop ${container_name}
+fi
+
+# remove cached container image if requested
+if [ $REMOVE_OLD_IMAGE -ne 0 ]; then
+    echo "Removing old image \"$IMAGE_NAME\"..."
+    docker image rm $IMAGE_NAME
+    echo "done"
+fi
+
+# check if we can reuse existing cached image
+docker image inspect $IMAGE_NAME > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "Building image \"$IMAGE_NAME\"..."
+    echo "   Acquire lock at $ROOT_DIR/.spawn_clone.lock"
+    (
+        flock -e 200
+        echo "   lock acquired"
+        
+        time docker commit $container_name $IMAGE_NAME
+
+    ) 200 > $ROOT_DIR/.spawn_clone.lock 
+    
+    
+    echo "done"
+else 
+    echo "Reusing existing image \"$IMAGE_NAME\""
+fi
+
+mkdir -p $CLONE_ROOT
+cp -ra $ROOT_DIR/bin $CLONE_ROOT/
+
+echo "Copying 'krita' source directory..."
+mkdir $CLONE_ROOT/persistent
+cp -ra $ROOT_DIR/persistent/krita $CLONE_ROOT/persistent
+echo "done"
+
+(
+    cd $CLONE_ROOT/
+    ./bin/run_container $IMAGE_NAME $CLONE_NAME
+    echo "Created container \"$CLONE_NAME\""
+)
+
+(
+    cd $CLONE_ROOT/persistent/krita
+        
+    if [ -n "$CHECKOUT_SHA" ]; then
+        git checkout $CHECKOUT_SHA
+    elif [ -n "$FETCH_URL" ]; then
+        git fetch $FETCH_URL && git checkout FETCH_HEAD
+    elif [ -n "$CHECKOUT_MR" ]; then
+        git fetch origin merge-requests/$CHECKOUT_MR/head && git checkout FETCH_HEAD
+    elif [ -n "$CHERRY_PICK_MR" ]; then
+        git fetch origin merge-requests/$CHECKOUT_MR/head && git cherry-pick FETCH_HEAD
+    fi
+)
+
+if [ $BUILD_CONTAINER -ne 0 ]; then
+    cd $CLONE_ROOT/
+    ./bin/build-krita
+fi
+
+if [ $ENTER_CONTAINER -ne 0 ]; then
+    echo "Entering clone \"$CLONE_NAME\"..."
+    cd $CLONE_ROOT/
+    exec ./bin/enter
+fi

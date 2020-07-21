@@ -1,0 +1,24 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+ROOT_DIR="$(realpath $DIR/../)"
+
+CLONE_DIR=$1
+
+if [ ! -d $CLONE_DIR ]; then
+    echo "Clone \"$CLONE_DIR\" does not exist"
+    exit 1
+fi
+
+if [ ! -f $CLONE_DIR/.container_name ]; then
+    echo "Container file \"$CLONE_DIR/.container_name\" is not found"
+    exit 2
+fi
+
+(
+    cd $CLONE_DIR
+    ./bin/remove_container
+)
+
+rm -rf $CLONE_DIR
