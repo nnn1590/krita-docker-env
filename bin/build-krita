@@ -1,13 +1,60 @@
 #!/bin/bash
 
+usage=\
+"Usage: $(basename "$0") [OPTION]...\n
+Build Krita in the current container\n
+\n
+where:\n
+    -h,      --help              show this help text\n
+    -jN,     --jobs=N            use N parallel jobs, default value is \`nproc\`\n
+    -r,      --run               run Krita after building\n
+"
+
+RUN_KRITA=0
+JOBS=`nproc`
+
+# Call getopt to validate the provided input. 
+options=$(getopt -o rj:h --long run,jobs:,help -- "$@")
+[ $? -eq 0 ] || { 
+    echo "Incorrect options provided"
+    exit 1
+}
+eval set -- "$options"
+while true; do
+    case "$1" in
+    -r | --run)
+        RUN_KRITA=1
+        ;;
+    -j | --jobs)
+        shift;
+        JOBS=$1
+        ;;
+    -h | --help)
+        echo -e $usage >&2
+        exit 1
+        ;;
+    --)
+        shift
+        break
+        ;;
+    esac
+    shift
+done
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source ${DIR}/find_default_container_file.inc
 
-container_name=$(parseContainerArgs $*)
+container_name=$(findContainerName)
 if [ -z ${container_name} ]; then
     exit 1
 fi
 
 tryStartContainer $container_name
 
-${DOCKER_BINARY} exec -ti ${container_name} bash -i -c 'cd /home/appimage/appimage-workspace/krita-build && make -j8 install'
+if [ $RUN_KRITA -eq 0 ]; then
+    ${DOCKER_BINARY} exec -ti ${container_name} \
+        bash -i -c "cd /home/appimage/appimage-workspace/krita-build && make -j$JOBS install"
+else
+    ${DOCKER_BINARY} exec -ti ${container_name} \
+        bash -i -c "cd /home/appimage/appimage-workspace/krita-build && make -j$JOBS install && krita"
+fi

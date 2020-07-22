@@ -18,7 +18,7 @@ CHECKOUT_MR=
 CHERRY_PICK_MR=
 BUILD_CONTAINER=0
 ENTER_CONTAINER=0
-
+JOBS=`nproc`
 
 usage=\
 "Usage: $(basename "$0") [OPTION]...\n
@@ -42,11 +42,12 @@ where:\n
              --cherry-pick-mr=MR cherry-pick the latest commit of merge request MR\n
     -b,      --build             build Krita after cloning\n
     -e,      --enter             enter container after cloning\n
+    -jN,     --jobs=N            use N parallel jobs, default value is \`nproc\`\n
     "
 
 
 # Call getopt to validate the provided input. 
-options=$(getopt -o fs:u:m:ben:h --long flush-cache,sha1:,fetch:,checkout-mr:,cherry-pick-mr:,build,enter,name,help -- "$@")
+options=$(getopt -o fs:u:m:ben:j:h --long flush-cache,sha1:,fetch:,checkout-mr:,cherry-pick-mr:,build,enter,name,jobs:,help -- "$@")
 [ $? -eq 0 ] || { 
     echo "Incorrect options provided"
     exit 1
@@ -82,6 +83,10 @@ while true; do
         ;;
     -e | --enter)
         ENTER_CONTAINER=1
+        ;;
+    -j | --jobs)
+        shift;
+        JOBS=$1
         ;;
     -h | --help)
         echo -e $usage >&2
@@ -188,7 +193,7 @@ echo "done"
 
 if [ $BUILD_CONTAINER -ne 0 ]; then
     cd $CLONE_ROOT/
-    ./bin/build-krita
+    ./bin/build-krita -j$JOBS
 fi
 
 if [ $ENTER_CONTAINER -ne 0 ]; then
