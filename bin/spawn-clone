@@ -18,6 +18,8 @@ CHECKOUT_MR=
 CHERRY_PICK_MR=
 BUILD_CONTAINER=0
 ENTER_CONTAINER=0
+BUILD_RELEASE_APPIMAGE=0
+BUILD_DEBUG_APPIMAGE=0
 JOBS=`nproc`
 
 usage=\
@@ -43,11 +45,13 @@ where:\n
     -b,      --build             build Krita after cloning\n
     -e,      --enter             enter container after cloning\n
     -jN,     --jobs=N            use N parallel jobs, default value is \`nproc\`\n
+             --release-appimage  build AppImage without debugging symbols
+             --debug-appimage    build AppImage with debugging symbols
     "
 
 
 # Call getopt to validate the provided input. 
-options=$(getopt -o fs:u:m:ben:j:h --long flush-cache,sha1:,fetch:,checkout-mr:,cherry-pick-mr:,build,enter,name,jobs:,help -- "$@")
+options=$(getopt -o fs:u:m:ben:j:h --long flush-cache,sha1:,fetch:,checkout-mr:,cherry-pick-mr:,build,enter,name,jobs:,help,release-appimage,debug-appimage -- "$@")
 [ $? -eq 0 ] || { 
     echo "Incorrect options provided"
     exit 1
@@ -88,6 +92,12 @@ while true; do
         shift;
         JOBS=$1
         ;;
+    --release-appimage)
+        BUILD_RELEASE_APPIMAGE=1
+        ;;
+    --debug-appimage)
+        BUILD_DEBUG_APPIMAGE=1
+        ;;
     -h | --help)
         echo -e $usage >&2
         exit 1
@@ -122,6 +132,9 @@ fi
 #echo CHERRY_PICK_MR $CHERRY_PICK_MR
 #echo BUILD_CONTAINER $BUILD_CONTAINER
 #echo ENTER_CONTAINER $ENTER_CONTAINER
+#echo BUILD_RELEASE_APPIMAGE $BUILD_RELEASE_APPIMAGE
+#echo BUILD_DEBUG_APPIMAGE $BUILD_DEBUG_APPIMAGE
+
 
 CLONE_ROOT=$ROOT_DIR/clones/$CLONE_NAME
 IMAGE_NAME=$container_name:clone-spawn
@@ -191,8 +204,13 @@ echo "done"
     fi
 )
 
-if [ $BUILD_CONTAINER -ne 0 ]; then
-    cd $CLONE_ROOT/
+cd $CLONE_ROOT/
+
+if [ $BUILD_RELEASE_APPIMAGE -ne 0 ]; then
+    ./bin/build_appimage -j$JOBS
+elif [ $BUILD_DEBUG_APPIMAGE -ne 0 ]; then
+    ./bin/build_appimage -j$JOBS --debug
+elif [ $BUILD_CONTAINER -ne 0 ]; then
     ./bin/build-krita -j$JOBS
 fi
 
