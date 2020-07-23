@@ -10,4 +10,9 @@ fi
 
 tryStartContainer $container_name
 
-${DOCKER_BINARY} exec -ti ${container_name} sh -c "cd /home/appimage && /bin/bash -l"
+if ${DOCKER_BINARY} exec -ti ${container_name} sh -c "ls /home/appimage/appimage-workspace/krita-build > /dev/null 2>&1"; then
+    ${DOCKER_BINARY} exec -ti ${container_name} sh -c "cd /home/appimage/appimage-workspace/krita-build && /bin/bash -l"
+else
+    ${DOCKER_BINARY} exec -ti ${container_name} sh -c "cd /home/appimage && /bin/bash -l"
+fi
+
