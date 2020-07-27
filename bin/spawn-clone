@@ -150,7 +150,7 @@ fi
 #echo BUILD_RELEASE_APPIMAGE $BUILD_RELEASE_APPIMAGE
 #echo BUILD_DEBUG_APPIMAGE $BUILD_DEBUG_APPIMAGE
 
-if [[ `realpath --relative-base=$ROOT_DIR $CLONE_ROOT` = /* ]]; then
+if [[ `realpath -m --relative-base=$ROOT_DIR $CLONE_ROOT` = /* ]]; then
     CLONE_ENTIRE_GIT=1
 fi
 
