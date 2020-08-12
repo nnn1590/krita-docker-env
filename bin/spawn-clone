@@ -170,7 +170,7 @@ fi
 # remove cached container image if requested
 if [ $REMOVE_OLD_IMAGE -ne 0 ]; then
     echo "Removing old image \"$IMAGE_NAME\"..."
-    docker image rm $IMAGE_NAME
+    docker image rm -f $IMAGE_NAME
     echo "done"
 fi
 

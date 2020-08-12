@@ -1,0 +1,123 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source ${DIR}/find_default_container_file.inc
+
+container_name=$(findContainerName $*)
+if [ -z ${container_name} ]; then
+    exit 1
+fi
+
+ROOT_DIR="$(realpath $DIR/../)"
+
+UPDATE_REPOSITORY=0
+RESET_REPOSITORY=0
+BUILD_KRITA=0
+JOBS=`nproc`
+
+usage=\
+"Usage: $(basename "$0") [OPTION]...\n
+Create a cached clones image for the current environment.\n
+After building a cached image cloning of the current container\n
+will happen almost instantly. One can also pass special options\n
+to update Krita source tree before making the cached image.\n
+\n
+Example:\n
+\n
+$(basename "$0") -ru\n
+\n
+This command will issue a series of commands before building\n
+a cached image:\n
+\n
+git reset --hard HEAD\n
+git pull\n
+./bin/build-krita\n
+\n
+\n
+Options:\n
+    -h,      --help              show this help text\n
+    -u,      --update            pull from the current git branch before building\n
+    -r,      --reset             issue 'git reset --hard HEAD' before building \n
+    -b,      --build             build Krita after cloning\n
+    -jN,     --jobs=N            use N parallel jobs, default value is \`nproc\`\
+    "
+
+
+# Call getopt to validate the provided input. 
+options=$(getopt -o urbj:h --long update,reset,build,jobs:,help -- "$@")
+[ $? -eq 0 ] || { 
+    echo "Incorrect options provided"
+    exit 1
+}
+eval set -- "$options"
+while true; do
+    case "$1" in
+    -u | --update)
+        UPDATE_REPOSITORY=1
+        BUILD_KRITA=1
+        ;;
+    -r | --reset)
+        RESET_REPOSITORY=1
+        BUILD_KRITA=1
+        ;;
+    -b | --build)
+        BUILD_KRITA=1
+        ;;
+    -j | --jobs)
+        shift;
+        JOBS=$1
+        ;;
+    -h | --help)
+        echo -e $usage >&2
+        exit 1
+        ;;
+    --)
+        shift
+        break
+        ;;
+    esac
+    shift
+done
+
+
+(
+    cd $ROOT_DIR/persistent/krita
+    
+    if [ $RESET_REPOSITORY -ne 0 ]; then
+        git reset --hard HEAD || exit 1
+    fi
+    
+    if [ $UPDATE_REPOSITORY -ne 0 ]; then
+        git pull || exit 2
+    fi
+)
+
+if [ $BUILD_KRITA -ne 0 ]; then
+    $ROOT_DIR/bin/build-krita -j$JOBS || exit 3
+fi
+
+IMAGE_NAME=$container_name:clone-spawn
+
+# stop source container if it is running
+container_id=$(${DOCKER_BINARY} ps -q -f "status=running" -f "name=$container_name")
+if [ -n "${container_id}" ]; then
+    ${DOCKER_BINARY} stop ${container_name}
+fi
+
+# check if there is an existing cached image
+docker image inspect $IMAGE_NAME > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "Removing old image \"$IMAGE_NAME\"..."
+    docker image rm -f $IMAGE_NAME
+    echo "done"
+fi
+
+echo "Building image \"$IMAGE_NAME\"..."
+echo "   Acquire lock at $ROOT_DIR/.spawn_clone.lock"
+(
+    flock -e 200
+    echo "   lock acquired"
+
+    time docker commit $container_name $IMAGE_NAME
+) 200>$ROOT_DIR/.spawn_clone.lock 
+echo "done"
