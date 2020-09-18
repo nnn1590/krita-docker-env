@@ -150,6 +150,28 @@ fi
 #echo BUILD_RELEASE_APPIMAGE $BUILD_RELEASE_APPIMAGE
 #echo BUILD_DEBUG_APPIMAGE $BUILD_DEBUG_APPIMAGE
 
+
+pushd $ROOT_DIR/persistent/krita
+    
+if [ -n "$CHECKOUT_SHA" ]; then
+    git checkout $CHECKOUT_SHA || exit 1
+elif [ -n "$FETCH_URL" ]; then
+    git fetch $FETCH_URL || exit 1
+    CHECKOUT_SHA=FETCH_HEAD
+    FETCH_URL=
+elif [ -n "$CHECKOUT_MR" ]; then
+    git fetch origin merge-requests/$CHECKOUT_MR/head || exit 1
+    CHECKOUT_SHA=FETCH_HEAD
+    CHECKOUT_MR=
+elif [ -n "$CHERRY_PICK_MR" ]; then
+    git fetch origin merge-requests/$CHERRY_PICK_MR/head || exit 1
+    CHERRRY_PICK_SHA=FETCH_HEAD
+    CHERRY_PICK_MR=
+fi
+
+popd
+
+
 if [[ `realpath -m --relative-base=$ROOT_DIR $CLONE_ROOT` = /* ]]; then
     CLONE_ENTIRE_GIT=1
 fi
@@ -216,17 +238,16 @@ echo "done"
     echo "Created container \"$CLONE_NAME\""
 )
 
+#echo CHECKOUT_SHA $CHECKOUT_SHA
+#echo CHERRRY_PICK_SHA $CHERRRY_PICK_SHA
+
 (
     cd $CLONE_ROOT/persistent/krita
         
     if [ -n "$CHECKOUT_SHA" ]; then
         git checkout $CHECKOUT_SHA
-    elif [ -n "$FETCH_URL" ]; then
-        git fetch $FETCH_URL && git checkout FETCH_HEAD
-    elif [ -n "$CHECKOUT_MR" ]; then
-        git fetch origin merge-requests/$CHECKOUT_MR/head && git checkout FETCH_HEAD
-    elif [ -n "$CHERRY_PICK_MR" ]; then
-        git fetch origin merge-requests/$CHECKOUT_MR/head && git cherry-pick FETCH_HEAD
+    elif [ -n "$CHERRRY_PICK_SHA" ]; then
+        git cherry-pick $CHERRRY_PICK_SHA
     fi
 )
 
