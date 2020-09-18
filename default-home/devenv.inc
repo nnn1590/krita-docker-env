@@ -24,3 +24,8 @@ prepend CMAKE_PREFIX_PATH $DEPSDIR
 prepend PYTHONPATH $DEPSDIR/sip
 
 prepend PATH ~/tools/bin
+
+# Disable leak checks in case ASAN is used.
+# It takes a lot of time to finalize the leaks 
+# and we usually just check for invalid access
+export ASAN_OPTIONS=detect_leaks=0
