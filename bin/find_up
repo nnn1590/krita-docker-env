@@ -1,12 +1,14 @@
 #!/bin/bash
 set -e
-path="$1"
+path="$(readlink -f "$1")"
 shift 1
+
 while [[ $path != / ]];
 do
-    find "$path" -maxdepth 1 -mindepth 1 "$@"
+    result=$(find "$path" -maxdepth 1 -mindepth 1 "$@")
 
-    if [ $? -eq 0 ]; then
+    if [[ -n "$result" ]]; then
+        echo $result
         break
     fi
 
