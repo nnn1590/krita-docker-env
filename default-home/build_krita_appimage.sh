@@ -42,7 +42,9 @@ while true; do
     shift
 done
 
-export STRIP_APPIMAGE=$((1-INCLUDE_DEBUG_SYMBOLS))
+if [ $INCLUDE_DEBUG_SYMBOLS -eq 0 ]; then
+    export STRIP_APPIMAGE=1
+fi
 
 (
     echo "### Building krita..."
