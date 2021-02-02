@@ -69,6 +69,7 @@ If you want to build a portable package for your version of Krita, just enter
 the container and type:
 
 ```bash
+run_cmake.sh ~/persistent/krita
 ~/bin/build_krita_appimage.sh
 ```
 
